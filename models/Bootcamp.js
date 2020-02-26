@@ -1,15 +1,15 @@
 
   
 const mongoose = require('mongoose');
-const slugify = require('slugify');
-const geocoder = require('../utils/geocoder');
+// const slugify = require('slugify');
+// const geocoder = require('../utils/geocoder');
 
 const BootcampSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, 'Please add a name'],
-      unique: true,
+      unique: true,//validation
       trim: true,
       maxlength: [50, 'Name can not be more than 50 characters']
     },
@@ -21,7 +21,7 @@ const BootcampSchema = new mongoose.Schema(
     },
     website: {
       type: String,
-      match: [//validation
+      match: [
         /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
         'Please use a valid URL with HTTP or HTTPS'
       ]
