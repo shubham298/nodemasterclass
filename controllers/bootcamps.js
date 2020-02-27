@@ -6,13 +6,40 @@ const geocoder = require('../utils/geocoder');
 //@route       Get /api/v1/bootcamps
 //@access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-let reqQuery=JSON.stringify(req.query)
-reqQuery=reqQuery.replace(/\b(lt|gte|gt|lte|in)\b/g,match => `$${match}`);
-console.log(reqQuery)
-    const bootcamps = await Bootcamp.find(JSON.parse(reqQuery));
+//req.query
+    const reqQuery = {
+        ...req.query
+    }
+
+    //field to exclude
+    const removeField = ['select']
+
+    //iterating removefield and deleteing the field from query
+    removeField.forEach(param => delete reqQuery[param]);
+
+    //query in String
+    let reqString = JSON.stringify(reqQuery)
+
+    //Generating operator $gt,$lt,$lte
+    reqString = reqString.replace(/\b(lt|gte|gt|lte|in)\b/g, match => `$${match}`);
+
+    //finding resource
+      query=Bootcamp.find(JSON.parse(reqString));
+
+
+    //select query
+    if(req.query.select){
+        const fields=req.query.select.split(',').join(' ');
+        query=query.select(fields)
+        console.log(fields)
+    }
+  
+    const bootcamps = await query;
+
     if (!bootcamps) {
         return next(new ErrorResponse('Bootcamp is empty', 404))
     }
+
     res.status(201).json({
         success: true,
         data: bootcamps
