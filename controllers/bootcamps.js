@@ -6,13 +6,13 @@ const geocoder = require('../utils/geocoder');
 //@route       Get /api/v1/bootcamps
 //@access      Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-//req.query
+    //req.query
     const reqQuery = {
         ...req.query
     }
 
     //field to exclude
-    const removeField = ['select']
+    const removeField = ['select', 'sort', 'page', 'limit', 'skip']
 
     //iterating removefield and deleteing the field from query
     removeField.forEach(param => delete reqQuery[param]);
@@ -24,25 +24,58 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     reqString = reqString.replace(/\b(lt|gte|gt|lte|in)\b/g, match => `$${match}`);
 
     //finding resource
-      query=Bootcamp.find(JSON.parse(reqString));
+    query = Bootcamp.find(JSON.parse(reqString));
 
 
     //select query
-    if(req.query.select){
-        const fields=req.query.select.split(',').join(' ');
-        query=query.select(fields)
+    if (req.query.select) {
+        const fields = req.query.select.split(',').join(' ');
+        query = query.select(fields)
         console.log(fields)
     }
-  
+    //Sort
+    if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ');
+        query = query.sort(sortBy)
+    } else {
+        query.sort('-createdAt')
+    }
+    //Pagination
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 1;
+    const startIndex = (page - 1) * limit
+    const endIndex = (page) * limit
+    const total = await Bootcamp.countDocuments();
+
+    query = query.skip(startIndex).limit(limit)
+
+    //Executing query
     const bootcamps = await query;
 
+    //Pagination result
+    const pagination = {}
+
+    if (startIndex > 0) {
+        pagination.prev = {
+            page: page - 1,
+            limit
+        }
+    }
+    if (endIndex < total) {
+        pagination.next = {
+            page: page + 1,
+            limit
+        }
+    }
     if (!bootcamps) {
         return next(new ErrorResponse('Bootcamp is empty', 404))
     }
 
     res.status(201).json({
         success: true,
-        data: bootcamps
+        count:bootcamps.length,
+        data: bootcamps,
+        pagination: pagination
     });
 
 })
